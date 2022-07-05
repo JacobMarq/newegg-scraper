@@ -8,6 +8,7 @@ SOLD_BY_NE = '%208000'
 ORDER_BY = '&Order=2'
 PAGE_SIZE = '&PageSize=96'
 PAGE_NUM = '&page='
+E_PER_PAGE = int(PAGE_SIZE.split('=')[1])
 
 # Desktop core components
 MEMORY_SEARCH_URL = 'https://www.newegg.com/p/pl?N=100007611'

@@ -132,6 +132,7 @@ if __name__ == "__main__":
     sel = sys_type + ' ' + component_type
     categories = determine_categories_to_scrape(sel)
     for category in categories:
+        queue = deque()
+        print(category, len(queue))
         queue = get_product_urls(category, categories[category])
-        print(queue)
     
