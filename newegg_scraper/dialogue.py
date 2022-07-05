@@ -6,24 +6,25 @@ def welcome_message():
 
 def select_system_type():
     print('Select system type:')
-    print('0: Desktop')
-    print('1: Server')
-    print('2: Mac')
-    print('3: Laptop')
+    print('0: All')
+    print('1: Desktop')
+    print('2: Server')
+    print('3: Mac')
+    print('4: Laptop')
 
 def type_input_error(input):
     print('\n')
     if input == 'sys':
-        print('ERROR: input must be a number between 0 and 3')
+        print('ERROR: Input must be a number between 0 and 3')
     elif input == 'component':
-        print('ERROR: input must be a number between 0 and 9')
+        print('ERROR: Input must be a number between 0 and 9')
     elif input == 'file':
-        print('ERROR: input must be a number between 0 and 1')
+        print('ERROR: Input must be a number between 0 and 1')
     print('\n')
 
 def false_save_dir_input_error():
     print('\n')
-    print('ERROR: save directory does not exist')
+    print('ERROR: Save directory does not exist')
     print('\n')
 
 def input_success(input):
@@ -55,3 +56,14 @@ def select_file_type():
     print('Select file type for scraped product data:')
     print('0: json')
     print('1: csv')
+
+# dialogue for product url
+def continue_scraping(file):
+    print('\n')
+    print('No new product urls found...')
+    print('Would you still like to scrape urls from existing file? (yes/no)')
+    print('\n')
+    print(file)
+
+def input_error_yn():
+    print("ERROR: Input must be 'yes' or 'no'")

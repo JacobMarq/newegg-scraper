@@ -1,5 +1,8 @@
+from collections import deque
 import os.path
 import dialogue
+import constant
+from product_urls import get_product_urls
 
 def welcome():
     dialogue.welcome_message()
@@ -96,9 +99,39 @@ def input_file_type():
     dialogue.input_success(file_type)
     return file_type
 
+def determine_categories_to_scrape(sel):
+    categories = None
+    if sel == 'All All Components':
+        categories = {
+            **constant.DESKTOP_CORE_COMPONENTS, 
+            **constant.DESKTOP_STORAGE_DEVICES, 
+            **constant.SERVER_CORE_COMPONENTS, 
+            **constant.MAC_COMPONENTS,
+            }
+    elif sel == 'Desktop All Components':
+        categories = {
+            **constant.DESKTOP_CORE_COMPONENTS,
+            **constant.DESKTOP_STORAGE_DEVICES
+        }
+    elif sel == 'Desktop Core Components':
+        categories = {**constant.DESKTOP_CORE_COMPONENTS}
+    elif sel == 'Desktop Storage Devices':
+        categories = {**constant.DESKTOP_STORAGE_DEVICES}
+    elif sel == 'Server Core Components':
+        categories = {**constant.SERVER_CORE_COMPONENTS}
+
+    return categories
+
 if __name__ == "__main__":
     welcome()
     sys_type = input_system_type()
     component_type = input_component_type()
     save_dir = input_save_dir()
     file_type = input_file_type()
+
+    sel = sys_type + ' ' + component_type
+    categories = determine_categories_to_scrape(sel)
+    for category in categories:
+        queue = get_product_urls(category, categories[category])
+        print(queue)
+    
