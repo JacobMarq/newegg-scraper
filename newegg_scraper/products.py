@@ -1,75 +1,203 @@
 from distutils.spawn import spawn
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager 
+from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
+from newegg_scraper.dialogue import prompt_complete_captcha
 from bs4 import BeautifulSoup
+from collections import deque
+from os.path import exists
 import pandas as pd
+import json
+import csv
 
-driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
+# create global header dictionary to be used for a headers list when converting to csv file
+def set_global_header_dict():
+    global header_dict 
+    header_dict = {'price':None, 'image':None, 'newegg_url':None}
 
-data = {'products': None} # Data object to store products in json format
-products = [] # List to store products
+def update_global_header_dict(header):
+    global header_dict
+    if header not in header_dict:
+        header_dict[header] = None
 
-# Get content from product page
-driver.get("https://www.newegg.com/corsair-16gb-288-pin-ddr4-sdram/p/N82E16820236694?Item=N82E16820236694&quicklink=true")
-content = driver.page_source
-soup = BeautifulSoup(content)
+# Get beautiful soup of content from product page
+def get_soup(url):
+    options = Options()
+    options.headless = True
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+    driver.get(url)
+    content = driver.page_source
+    soup = BeautifulSoup(content, features="html.parser")
+    # newegg monitors traffic for bot activity 
+    # redirects request to 'are you human' page
+    # requires captcha
+    for h1 in soup.find_all('h1'):
+        print(h1)
+        if h1 is not None:
+            if h1.text.lower() == 'human?':
+                driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
+                driver.get(url)
+                prompt_complete_captcha()
+                soup = get_soup(url)
+    return soup
 
-# Product object to store product info in json format
-product = { 
-    'specs': None,
-    'price': None,
-    'img': None
-}
+# handle price collection 
+def get_product_price(soup):
+    price = soup.find('li', class_='price-current')
+    if price is None:
+        return None
+    price = price.text
+    if " –" in price:
+        price = price[:-2]
+    return price
 
-# Get current price and main img
-price = soup.find('li', class_='price-current').text
-product.update({'price':price})
-print(product['price'])
+# handle img collection
+def get_product_image(soup):
+    img = soup.find('div', attrs={'style':'order:-1'})
+    if img is None:
+        return None
+    elif img.div.img['src'] == 'https://c1.neweggimages.com/ProductImageCompressAll300/AFRX_1_201808132111656731.jpg':
+        return None
+    img = img.div.img['src']
+    return img
 
-img = soup.find('div', attrs={'style':'order:-1'}).div.img['src']
-product.update({'img':img})
-print(product['img'])
+# handle specification header collection
+def get_spec_header(tr):
+    th = tr.find('th')
+    if th is None:
+        return None
+    # some table headers contain a question mark button that
+    # displays a div giving more information about that
+    # header
+    
+    # next 2 lines remove that button and its children
+    # from the header
+    if th.a is not None:
+        th.a.decompose()
 
-# Get memory specifications
-def get_memory_specs(soup):
-    specs = []
+    if th.has_attr('class'):
+        return None
+
+    th = th.text.strip().lower()
+    # Similar Products table begins with 'products' header
+    # next 2 lines exits the loop before Similar Products Table
+    if th == 'products':
+        return th
+    th = th.replace(" ", "_")
+    return th
+
+# Get product specifications
+def get_product_specs(soup, file_type):
+    specs = {}
     # all items under specs tab are stored as table row
     # items under 'Compare With Similar Products' are also table rows
-    # 'LED color' row does not exist on all RAM product pages
-    for tr in soup.find_all('tr', limit=20):
-        th = tr.find('th')
-        # some table headers contain a question mark button that
-        # displays a div giving more information about that
-        # header
-
-        # next 2 lines remove that button and its children
-        # from the header
-        if th.a is not None:
-            th.a.decompose()
-
-        th = th.text.strip()
-        # Similar Products table begins with 'Products' header
-        # next 2 lines exits the loop before Similar Products Table
-        if th == 'Products':
+    for tr in soup.find_all('tr', limit=25):
+        th = get_spec_header(tr)
+        if th is None:
+            continue
+        elif th == 'products':
             break
-        # comment out next lines to record following rows
-        if th == 'Features':
-            continue 
-        if th == 'Recommend Use':
-            continue
-        if th == 'Date First Available':
-            continue
-
-        td = tr.find('td').text.strip()
-        spec = {th:td}
-        specs.append(spec)
-        print(th, td)
+        
+        td = tr.find('td')
+        if td is not None:
+            td = tr.text.strip()
+        
+        specs[th] = td
+        if file_type == '.csv':
+            update_global_header_dict(th)
     return specs
 
-specs = get_memory_specs(soup)
-product.update({'specs':specs})
-products.append(product)
+# parse data from product page
+def parse_data(url, file_type):
+    product = { 
+        'specs': None,
+        'price': None,
+        'image': None,
+        'newegg_url': url
+    }
+    soup = get_soup(url)
 
-data.update({'products':products})
-print(data)
+    price = get_product_price(soup)
+    product.update({'price':price})
+
+    img = get_product_image(soup)
+    product.update({'image':img})
+
+    specs = get_product_specs(soup, file_type)
+    product.update({'specs':specs})
+    return product
+
+# handles save file path creation from user input on main
+def create_save_file_path(save_dir, category, file_type):
+    file_path = save_dir + category + file_type
+    return file_path
+
+# convert data dictionary to json string
+# write json string to file at save file path
+def write_data_to_json(data, file):
+    json_string = json.dumps(data)
+    with open(file, 'w') as save_file:
+        save_file.write(json_string)
+        save_file.close()
+
+# handle updating json file
+def update_json_file(data, file):
+    file_data = None
+    with open(file) as json_file:
+        file_data = json.load(json_file)
+        json_file.close
+    file_data['products'].extend(data['products'])
+    write_data_to_json(file_data, file)
+
+# use globals headers list and a flattened data dictionary to write csv file
+def write_data_to_csv(data, file):
+    headers = header_dict.keys()
+
+    with open(file, "x") as csv_file:
+        writer = csv.DictWriter(csv_file, fieldnames=headers)
+        writer.writeheader()
+        for product in data:
+            specs = product.pop('specs') 
+            product.update(specs)
+            new_dict = {}
+            for header in headers:
+                if header in product:
+                    new_dict[header] = product[header]
+                else:
+                    new_dict[header] = None
+            writer.writerow(new_dict)
+        csv_file.close()
+
+# handle updates to csv file
+def update_csv_file(data, file):
+    file = file
+    data = data
+
+# main product data collection method
+def scrape_product_data(save_dir, category, file_type, queue=deque(), update=True):
+    data = None
+    products_list = []
+    file_path = create_save_file_path(save_dir, category, file_type)
+    if file_type == '.csv':
+        set_global_header_dict()
+
+    while queue:
+        product_url = queue.popleft()
+        product = parse_data(product_url, file_type)
+        products_list.append(product)
+
+    if file_type == '.json':
+        data = {'products':products_list} # stores products in proper dict format for easy json file conversion
+        
+        if exists(file_path):
+            update_json_file(data, file_path)
+        else:
+            write_data_to_json(data, file_path)
+    elif file_type == '.csv':
+        data = products_list # keeps products as a list to iterate for easier csv file conversion
+
+        if exists(file_path):
+            update_csv_file(data, file_path)
+        else:
+            write_data_to_csv(data, file_path)

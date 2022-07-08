@@ -67,3 +67,13 @@ def continue_scraping(file):
 
 def input_error_yn():
     print("ERROR: Input must be 'yes' or 'no'")
+
+# dialogue complete captcha
+def prompt_complete_captcha():
+    print('\n')
+    print('This service is suspecting bot behavior.')
+    print('please open chrome tab and complete captcha to continue.')
+    print('once complete enter "done" below:')
+    inp = None
+    while inp != 'done':
+        inp = input()
