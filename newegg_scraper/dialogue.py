@@ -68,7 +68,8 @@ def continue_scraping(file):
 def input_error_yn():
     print("ERROR: Input must be 'yes' or 'no'")
 
-# dialogue complete captcha
+# Only dialogue with input because it
+# runs in both product_urls and products 
 def prompt_complete_captcha():
     print('\n')
     print('This service is suspecting bot behavior.')

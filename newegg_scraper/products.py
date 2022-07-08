@@ -12,9 +12,12 @@ import json
 import csv
 
 # create global header dictionary to be used for a headers list when converting to csv file
-def set_global_header_dict():
+def set_global_header_dict(file):
     global header_dict 
     header_dict = {'price':None, 'image':None, 'newegg_url':None}
+    # TODO: if csv file exists import csv headers as global header dict
+    if exists(file):
+        pass
 
 def update_global_header_dict(header):
     global header_dict
@@ -150,8 +153,9 @@ def update_json_file(data, file):
     file_data['products'].extend(data['products'])
     write_data_to_json(file_data, file)
 
-# use globals headers list and a flattened data dictionary to write csv file
+# use global header dictionary and a flattened data dictionary to write csv file
 def write_data_to_csv(data, file):
+    # global header dictionary handles the issue of having an unknown number of various headers on each product within a category  
     headers = header_dict.keys()
 
     with open(file, "x") as csv_file:
@@ -169,10 +173,13 @@ def write_data_to_csv(data, file):
             writer.writerow(new_dict)
         csv_file.close()
 
-# handle updates to csv file
+# TODO create method to handle updating product data
+# read headers from csv file
+# if headers match csv headers then append to file
+# else import data as dictionary from csv file and rewrite headers
+# merge new data to csv data, then write to new file
 def update_csv_file(data, file):
-    file = file
-    data = data
+    pass
 
 # main product data collection method
 def scrape_product_data(save_dir, category, file_type, queue=deque(), update=True):
@@ -180,7 +187,7 @@ def scrape_product_data(save_dir, category, file_type, queue=deque(), update=Tru
     products_list = []
     file_path = create_save_file_path(save_dir, category, file_type)
     if file_type == '.csv':
-        set_global_header_dict()
+        set_global_header_dict(file_path)
 
     while queue:
         product_url = queue.popleft()

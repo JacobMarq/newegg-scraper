@@ -12,23 +12,7 @@ from collections import deque
 import pandas as pd
 import csv
 
-# info for URL
-# ORDER_BY = '&Order=': determines order of product on page
-# set to 2 by default can be changed in constant.py
-# options are: [0,1,2,3,4,5]
-# 0 = featured items
-# 1 = lowest price
-# 2 = highest price
-# 3 = best selling
-# 4 = best rating
-# 5 = most reviews
-
-# PAGE_SIZE = '&PageSize=': determines number of products per page
-# set to 96 by default can be changed in constant.py
-# options are: [36, 60, 96]
-
-# PAGE_NUM = '&page=': current page number
-# SOLD_BY_NE = %208000: determines that the items displayed are sold by newegg
+# combine url with given params to create desired query
 def append_category_url_params(url):
     new_url = url + SOLD_BY_NE + ORDER_BY + PAGE_SIZE + PAGE_NUM
     return new_url
@@ -208,8 +192,3 @@ def get_product_urls(category, category_url, dont_update = False):
     queue = parse_category_pages(category_url)
     write_queue_to_csv(queue, url_file)
     return queue
-
-# url = 'https://www.newegg.com/p/pl?N=100007611%208000&Order=2&PageSize=96&page=' # category url
-# url_file = dirname(__file__) + '/csv_files/product_urls.csv' # product urls.csv file path
-# queue = get_product_urls()
-# print(queue) 

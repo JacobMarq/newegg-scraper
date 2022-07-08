@@ -3,7 +3,23 @@ CSV_HEADER_1 = 'Page Number'
 CSV_HEADER_2 = 'Product Page URL'
 CSV_HEADER_3 = 'Entry Number'
 
-# category URL Params
+# info for URL
+# ORDER_BY = '&Order=': orders products on display page by desired metric
+# set to 2 by default
+# options are: [0,1,2,3,4,5]
+# 0 = featured items
+# 1 = lowest price
+# 2 = highest price
+# 3 = best selling
+# 4 = best rating
+# 5 = most reviews
+
+# PAGE_SIZE = '&PageSize=': number of products displayed per page
+# set to 96 by default
+# options are: [36, 60, 96]
+
+# PAGE_NUM = '&page=': current page number
+# SOLD_BY_NE = %208000: sets items displayed are sold by newegg
 SOLD_BY_NE = '%208000'
 ORDER_BY = '&Order=2'
 PAGE_SIZE = '&PageSize=96'
