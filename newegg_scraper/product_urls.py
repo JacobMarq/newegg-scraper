@@ -21,7 +21,6 @@ def append_category_url_params(url):
 # requires captcha
 def check_for_captcha(soup, url):
     for h1 in soup.find_all('h1'):
-        print(h1)
         if h1 is not None:
             if h1.text.lower() == 'human?':
                 prompt_complete_captcha()

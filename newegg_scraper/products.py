@@ -9,16 +9,24 @@ from newegg_scraper.dialogue import prompt_complete_captcha
 from bs4 import BeautifulSoup
 from collections import deque
 from os.path import exists
+import pandas as pd
 import json
 import csv
+
+def get_headers_from_csv(file):
+    header_dict = {}
+    with open(file, newline='') as csv_file:
+        reader = csv.DictReader(csv_file)
+        header_dict = dict(list(reader[0]))
+        csv_file.close()
+    return header_dict
 
 # create global header dictionary to be used for a headers list when converting to csv file
 def set_global_header_dict(file):
     global header_dict 
     header_dict = {'price':None, 'image':None, 'newegg_url':None}
-    # TODO: if csv file exists import csv headers as global header dict
     if exists(file):
-        pass
+        header_dict = get_headers_from_csv(file)
 
 def update_global_header_dict(header):
     global header_dict
@@ -30,7 +38,6 @@ def update_global_header_dict(header):
 # requires captcha
 def check_for_captcha(soup, url):
     for h1 in soup.find_all('h1'):
-        print(h1)
         if h1 is not None:
             if h1.text.lower() == 'human?':
                 prompt_complete_captcha()
