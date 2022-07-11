@@ -1,4 +1,6 @@
+from datetime import time
 from distutils.spawn import spawn
+from random import Random
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
@@ -7,7 +9,6 @@ from newegg_scraper.dialogue import prompt_complete_captcha
 from bs4 import BeautifulSoup
 from collections import deque
 from os.path import exists
-import pandas as pd
 import json
 import csv
 
@@ -24,6 +25,18 @@ def update_global_header_dict(header):
     if header not in header_dict:
         header_dict[header] = None
 
+# newegg monitors traffic for bot activity 
+# redirects request to 'are you human' page
+# requires captcha
+def check_for_captcha(soup, url):
+    for h1 in soup.find_all('h1'):
+        print(h1)
+        if h1 is not None:
+            if h1.text.lower() == 'human?':
+                prompt_complete_captcha()
+                soup = get_soup(url)
+    return soup
+
 # Get beautiful soup of content from product page
 def get_soup(url):
     options = Options()
@@ -32,17 +45,7 @@ def get_soup(url):
     driver.get(url)
     content = driver.page_source
     soup = BeautifulSoup(content, features="html.parser")
-    # newegg monitors traffic for bot activity 
-    # redirects request to 'are you human' page
-    # requires captcha
-    for h1 in soup.find_all('h1'):
-        print(h1)
-        if h1 is not None:
-            if h1.text.lower() == 'human?':
-                driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
-                driver.get(url)
-                prompt_complete_captcha()
-                soup = get_soup(url)
+    soup = check_for_captcha(soup, url)
     return soup
 
 # handle price collection 
@@ -182,7 +185,7 @@ def update_csv_file(data, file):
     pass
 
 # main product data collection method
-def scrape_product_data(save_dir, category, file_type, queue=deque(), update=True):
+def scrape_product_data(save_dir, category, file_type, queue=deque()):
     data = None
     products_list = []
     file_path = create_save_file_path(save_dir, category, file_type)
@@ -193,6 +196,7 @@ def scrape_product_data(save_dir, category, file_type, queue=deque(), update=Tru
         product_url = queue.popleft()
         product = parse_data(product_url, file_type)
         products_list.append(product)
+        time.sleep(Random.randint(0, 5))
 
     if file_type == '.json':
         data = {'products':products_list} # stores products in proper dict format for easy json file conversion

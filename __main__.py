@@ -1,5 +1,7 @@
 from collections import deque
+from datetime import time
 from os.path import dirname, isdir
+from random import Random, random
 import newegg_scraper.dialogue as dialogue
 import newegg_scraper.constant as constant
 from newegg_scraper.product_urls import get_product_urls
@@ -104,13 +106,12 @@ def input_file_type():
 def get_categories_to_scrape(sel):
     categories = None
     if sel == 'All All Components':
-        categories = {'enterprise_ssd':constant.ENTERPRISE_SSD_SEARCH_URL}
-        # categories = {
-        #     **constant.DESKTOP_CORE_COMPONENTS, 
-        #     **constant.DESKTOP_STORAGE_DEVICES, 
-        #     **constant.SERVER_CORE_COMPONENTS, 
-        #     **constant.MAC_COMPONENTS,
-        # }
+        categories = {
+            **constant.DESKTOP_CORE_COMPONENTS, 
+            **constant.DESKTOP_STORAGE_DEVICES, 
+            **constant.SERVER_CORE_COMPONENTS, 
+            **constant.MAC_COMPONENTS,
+        }
     elif sel == 'Desktop All Components':
         categories = {
             **constant.DESKTOP_CORE_COMPONENTS,
@@ -139,9 +140,14 @@ if __name__ == "__main__":
     categories = get_categories_to_scrape(sel)
     for category in categories:
         queue = deque()
-        queue = get_product_urls(category, categories[category])
-        if queue is None:
+        queue_list = get_product_urls(category, categories[category])
+        if queue_list is None:
             continue
-        scrape_product_data(save_dir, category, file_type, queue)
+        elif type(queue_list) == list:
+            for queue in queue_list:
+                scrape_product_data(save_dir, category, file_type, queue)
+                time.sleep(Random.randrange(180, 360, 60))
+        else:
+            scrape_product_data(save_dir, category, file_type, queue)
     
     

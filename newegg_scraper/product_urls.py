@@ -9,13 +9,24 @@ from os.path import exists, dirname
 from newegg_scraper.constant import SOLD_BY_NE, ORDER_BY, PAGE_SIZE, PAGE_NUM, E_PER_PAGE, CSV_HEADER_1, CSV_HEADER_2, CSV_HEADER_3
 from newegg_scraper.dialogue import input_error_yn, continue_scraping, prompt_complete_captcha
 from collections import deque
-import pandas as pd
 import csv
 
 # combine url with given params to create desired query
 def append_category_url_params(url):
     new_url = url + SOLD_BY_NE + ORDER_BY + PAGE_SIZE + PAGE_NUM
     return new_url
+
+# newegg monitors traffic for bot activity 
+# redirects request to 'are you human' page
+# requires captcha
+def check_for_captcha(soup, url):
+    for h1 in soup.find_all('h1'):
+        print(h1)
+        if h1 is not None:
+            if h1.text.lower() == 'human?':
+                prompt_complete_captcha()
+                soup = get_soup(url)
+    return soup
 
 # gather beautiful soup of url
 def get_soup(url):
@@ -25,15 +36,7 @@ def get_soup(url):
     driver.get(url)
     content = driver.page_source
     soup = BeautifulSoup(content, features="html.parser")
-    # newegg monitors traffic for bot activity 
-    # redirects request to 'are you human' page
-    # requires captcha
-    for h1 in soup.find_all('h1'):
-        print(h1)
-        if h1 is not None:
-            if h1.text.lower() == 'human?':
-                prompt_complete_captcha()
-                soup = get_soup(url)
+    soup = check_for_captcha(soup, url)
     return soup
 
 # add product urls to queue
@@ -56,13 +59,13 @@ def parse_category_pages(url, queue=None, total_pages=None, pg=1):
         queue = deque()
         url = append_category_url_params(url)
         soup = get_soup(url + ('% s' % pg))
-        span = soup.find('span', attrs={'class':'list-tool-pagination-text'}) # contains '"Page" <!-- --> <strong> "x" <!-- --> "/" <!-- --> "y" </strong>'
-        strong = span.strong.text # contains 'x/y'
+        span = soup.find('span', attrs={'class':'list-tool-pagination-text'}) # contains: '"Page" <!-- --> <strong> "x" <!-- --> "/" <!-- --> "y" </strong>'
+        strong = span.strong.text # contains: 'x/y'
         total_pages = int(strong.split('/')[1])
 
         queue = enqueue_product_urls(soup, queue)
         return parse_category_pages(url, queue, total_pages, pg + 1)
-    elif pg > 2 or pg > total_pages: # when testing recommend hard coding a small number / for production pg > total_pages
+    elif pg > 2 or pg > total_pages: # when testing recommend hard coding "pg > small number or pg > total_pages" / for production "pg > total_pages"
         return queue
 
     soup = get_soup(url + ('% s' % pg))
@@ -81,11 +84,11 @@ def write_queue_to_csv(queue, file):
     queue_copy = queue.copy()
     with open(file, 'x') as csv_file:
         writer = csv.writer(csv_file)
-        writer.writerow([CSV_HEADER_1, CSV_HEADER_2, CSV_HEADER_3]) # write header row
+        writer.writerow([CSV_HEADER_1, CSV_HEADER_2, CSV_HEADER_3])
         entry_num = 0
         while queue_copy:
             entry_num += 1
-            pg = int(entry_num / E_PER_PAGE) + 1 # determine pg number by dividing entry number by the number of entries per page
+            pg = int(entry_num / E_PER_PAGE) + 1 # provides an estimate of pg number by dividing entry number by the number of entries per page
             writer.writerow([pg ,queue_copy.popleft(), entry_num])
         csv_file.close()
 
@@ -96,20 +99,26 @@ def append_queue_to_csv(queue, entry_num, file):
         writer = csv.writer(csv_file)
         while queue_copy:
             entry_num += 1
-            pg = int(entry_num / E_PER_PAGE) + 1 # determine pg number by dividing entry number by the number of entries per page
+            pg = int(entry_num / E_PER_PAGE) + 1 # provides an estimate of pg number by dividing entry number by the number of entries per page
             writer.writerow([pg, queue_copy.popleft(), entry_num])
         csv_file.close()
 
 # create queue from url file
 def get_queue_from_csv(file):
+    queue_list = []
     queue = deque()
+    last_pg = 1
     with open(file, newline='') as csv_file:
         reader = csv.DictReader(csv_file)
         for row in reader:
             if row:
+                if last_pg < row[CSV_HEADER_1]:
+                    queue_list.append(queue)
+                    queue = deque()
+                    last_pg += 1
                 queue.append(row[CSV_HEADER_2])
         csv_file.close()
-    return queue
+    return queue_list
 
 # get last 20 rows including page number, url, and entry number from csv
 def get_last_rows_from_csv(file):
@@ -127,7 +136,6 @@ def get_last_rows_from_csv(file):
         last_rows.append(data[i])  
     return last_rows
 
-# check if the last item, from the category page, already exists in csv file
 def last_rows_contain_last_item(rows, item):
     for row in rows:
         if row[CSV_HEADER_2] == item: 
@@ -135,7 +143,7 @@ def last_rows_contain_last_item(rows, item):
         else: 
             continue
 
-# find all new items, appending them to new queue in proper order
+# uses the last item from csv file as a marker for when new items in the queue start
 def enqueue_new_items(queue, last_row):
     new_queue = deque()
     cur_item = queue.pop()
@@ -144,7 +152,6 @@ def enqueue_new_items(queue, last_row):
         cur_item = queue.pop()
     return new_queue
 
-# yes/no prompt for user
 def prompt_yes_no():
     inp = input().lower()
     while inp != 'yes' and inp != 'no':
@@ -153,42 +160,35 @@ def prompt_yes_no():
     if inp == 'yes': return True
     elif inp == 'no': return False
 
-# handle url file update to check if new urls are needed, update file if so
+# handle url file update to check if new urls exist
 def update_product_urls(file, category, category_url):
     queue = deque()
-    last_rows = get_last_rows_from_csv(file) # array to store last rows scraped and added to file
-    # reparse category pages starting from the last recorded page on file
+    # get the last rows from csv to compare to the current site for changes
+    last_rows = get_last_rows_from_csv(file) 
     queue = parse_category_pages(category_url, queue, None, int(last_rows[0][CSV_HEADER_1]))
-    last_item = queue.pop() # last item found on category page
+    last_item = queue.pop()
 
-    # check if last item already exists on file
     if last_rows_contain_last_item(last_rows, last_item):
-        # allow user to continue and scrape existing url file or skip it
         continue_scraping(file)
         if prompt_yes_no(): 
             return get_product_urls(category, category_url, True)
         else: return None
     else:
-        # append new items to end of csv file
         queue.append(last_item)
         queue = enqueue_new_items(queue, last_rows[0])
         append_queue_to_csv(queue, int(last_rows[0][CSV_HEADER_3]), file)
-        # return queue of new items for product scraping
         return queue
 
 # main product url collection method 
 def get_product_urls(category, category_url, dont_update = False):
-    # file path to store product_urls.csv file
     url_file = create_url_file_path(category)
-    # if url file does exist and no new urls are needed, pull queue from file
     if exists(url_file) and dont_update:
-        queue = get_queue_from_csv(url_file) 
-        return queue
-    # if url file exists but new urls may be needed, update file
+        queue_list = get_queue_from_csv(url_file) 
+        return queue_list
     elif exists(url_file) and not dont_update:
         return update_product_urls(url_file, category, category_url)
 
-    # if url file does not exist, create one
     queue = parse_category_pages(category_url)
     write_queue_to_csv(queue, url_file)
-    return queue
+    queue_list = get_queue_from_csv(url_file)
+    return queue_list
