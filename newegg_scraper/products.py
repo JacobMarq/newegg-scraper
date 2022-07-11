@@ -19,6 +19,9 @@ def get_headers_from_csv(file):
         reader = csv.DictReader(csv_file)
         header_dict = dict(list(reader[0]))
         csv_file.close()
+    # csv_headers_dict avoids having to reread file headers later for comparison
+    global csv_headers_dict
+    csv_headers_dict = header_dict
     return header_dict
 
 # create global header dictionary to be used for a headers list when converting to csv file
@@ -150,46 +153,81 @@ def create_save_file_path(save_dir, category, file_type):
 # write json string to file at save file path
 def write_data_to_json(data, file):
     json_string = json.dumps(data)
-    with open(file, 'w') as save_file:
+    file_mode = None
+    if exists(file):
+        file_mode = 'w'
+    else:
+        file_mode = 'x'
+    with open(file, file_mode) as save_file:
         save_file.write(json_string)
         save_file.close()
 
 # handle updating json file
 def update_json_file(data, file):
     file_data = None
-    with open(file) as json_file:
+    with open(file, 'r') as json_file:
         file_data = json.load(json_file)
         json_file.close
     file_data['products'].extend(data['products'])
     write_data_to_json(file_data, file)
+
+# handles dict row creation, corrects for varying order and number of keys in dict to match csv columns
+def create_dict_row(product, headers):
+    if product['specs'] is not None:
+        specs = product.pop('specs') 
+        product.update(specs)
+    new_dict = {}
+    for header in headers:
+        if header in product:
+            new_dict[header] = product[header]
+        else:
+            new_dict[header] = None
+    return new_dict
 
 # use global header dictionary and a flattened data dictionary to write csv file
 def write_data_to_csv(data, file):
     # global header dictionary handles the issue of having an unknown number of various headers on each product within a category  
     headers = header_dict.keys()
 
-    with open(file, "x") as csv_file:
+    with open(file, 'x') as csv_file:
         writer = csv.DictWriter(csv_file, fieldnames=headers)
         writer.writeheader()
         for product in data:
-            specs = product.pop('specs') 
-            product.update(specs)
-            new_dict = {}
-            for header in headers:
-                if header in product:
-                    new_dict[header] = product[header]
-                else:
-                    new_dict[header] = None
+            new_dict = create_dict_row(product, headers)
             writer.writerow(new_dict)
         csv_file.close()
 
-# TODO create method to handle updating product data
-# read headers from csv file
 # if headers match csv headers then append to file
-# else import data as dictionary from csv file and rewrite headers
-# merge new data to csv data, then write to new file
-def update_csv_file(data, file):
-    pass
+def append_data_to_csv(data, file):
+    headers = header_dict.keys()
+
+    with open(file, 'a') as csv_file:
+        writer = csv.DictWriter(csv_file, fieldnames=headers)
+        for product in data:
+            new_dict = create_dict_row(product, headers)
+            writer.writerow(new_dict)
+        csv_file.close()
+
+# merge csv data with new data, then overwrite file
+def overwrite_csv(data, file):
+    headers = header_dict.keys()
+
+    with open(file, 'r+') as csv_file:
+        reader = csv.DictReader(csv_file)
+        data = list(reader) + data
+        writer = csv.DictWriter(csv_file, fieldnames=headers)
+        writer.writeheader()
+        for product in data:
+            new_dict = create_dict_row(product, headers)
+            writer.writerow(new_dict)
+        csv_file.close()
+
+# method to handle updating product data
+def handle_csv_file_update(data, file):
+    if header_dict == csv_headers_dict:
+        append_data_to_csv(data, file)
+    else:
+        overwrite_csv(data, file)
 
 # main product data collection method
 def scrape_product_data(save_dir, category, file_type, queue=deque()):
@@ -216,6 +254,6 @@ def scrape_product_data(save_dir, category, file_type, queue=deque()):
         data = products_list # keeps products as a list to iterate for easier csv file conversion
 
         if exists(file_path):
-            update_csv_file(data, file_path)
+            handle_csv_file_update(data, file_path)
         else:
             write_data_to_csv(data, file_path)
