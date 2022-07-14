@@ -64,7 +64,7 @@ def parse_category_pages(url, queue=None, total_pages=None, pg=1):
 
         queue = enqueue_product_urls(soup, queue)
         return parse_category_pages(url, queue, total_pages, pg + 1)
-    elif pg > 2 or pg > total_pages: # when testing recommend hard coding "pg > small number or pg > total_pages" / for production "pg > total_pages"
+    elif pg > total_pages: # when testing recommend hard coding "pg > small number or pg > total_pages" / for production "pg > total_pages"
         return queue
 
     soup = get_soup(url + ('% s' % pg))

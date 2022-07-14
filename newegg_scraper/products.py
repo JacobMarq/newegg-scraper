@@ -13,42 +13,46 @@ import pandas as pd
 import json
 import csv
 
-def get_headers_from_csv(file):
+def get_headers_from_csv(file: str):
     header_dict = {}
     with open(file, newline='') as csv_file:
         reader = csv.DictReader(csv_file)
-        header_dict = dict(list(reader[0]))
+        header_dict = (dict.fromkeys(list(reader)[0]))
         csv_file.close()
-    # csv_headers_dict avoids having to reread file headers later for comparison
-    global csv_headers_dict
-    csv_headers_dict = header_dict
     return header_dict
 
-# create global header dictionary to be used for a headers list when converting to csv file
-def set_global_header_dict(file):
-    global header_dict 
+# create header dictionary to be used for a headers list when converting to csv file
+def create_header_dict(file: str):
     header_dict = {'price':None, 'image':None, 'newegg_url':None}
     if exists(file):
         header_dict = get_headers_from_csv(file)
+    return header_dict
 
-def update_global_header_dict(header):
-    global header_dict
-    if header not in header_dict:
-        header_dict[header] = None
+def update_header_dict(specs: dict, header_dict: dict):
+    for key in specs.keys():
+        if key not in header_dict:
+            header_dict[key] = None
+        else:
+            continue
+    return header_dict
 
 # newegg monitors traffic for bot activity 
 # redirects request to 'are you human' page
 # requires captcha
-def check_for_captcha(soup, url):
-    for h1 in soup.find_all('h1'):
-        if h1 is not None:
-            if h1.text.lower() == 'human?':
-                prompt_complete_captcha()
-                soup = get_soup(url)
-    return soup
+def check_for_captcha(soup: BeautifulSoup, url: str):
+        for h1 in soup.find_all('h1'):
+            if h1 is not None:
+                if h1.text.lower() == 'human?':
+                    options = Options()
+                    options.add_experimental_option('detach', True)
+                    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+                    driver.get(url)
+                    prompt_complete_captcha()
+                    soup = get_soup(url)
+        return soup
 
 # Get beautiful soup of content from product page
-def get_soup(url):
+def get_soup(url: str):
     options = Options()
     options.headless = True
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
@@ -59,7 +63,7 @@ def get_soup(url):
     return soup
 
 # handle price collection 
-def get_product_price(soup):
+def get_product_price(soup: BeautifulSoup):
     price = soup.find('li', class_='price-current')
     if price is None:
         return None
@@ -69,7 +73,7 @@ def get_product_price(soup):
     return price
 
 # handle img collection
-def get_product_image(soup):
+def get_product_image(soup: BeautifulSoup):
     img = soup.find('div', attrs={'style':'order:-1'})
     if img is None:
         return None
@@ -104,7 +108,7 @@ def get_spec_header(tr):
     return th
 
 # Get product specifications
-def get_product_specs(soup, file_type):
+def get_product_specs(soup: BeautifulSoup):
     specs = {}
     # all items under specs tab are stored as table row
     # items under 'Compare With Similar Products' are also table rows
@@ -120,12 +124,10 @@ def get_product_specs(soup, file_type):
             td = tr.text.strip()
         
         specs[th] = td
-        if file_type == '.csv':
-            update_global_header_dict(th)
     return specs
 
 # parse data from product page
-def parse_data(url, file_type):
+def parse_data(url: str):
     product = { 
         'specs': None,
         'price': None,
@@ -140,18 +142,18 @@ def parse_data(url, file_type):
     img = get_product_image(soup)
     product.update({'image':img})
 
-    specs = get_product_specs(soup, file_type)
+    specs = get_product_specs(soup)
     product.update({'specs':specs})
     return product
 
-# handles save file path creation from user input on main
-def create_save_file_path(save_dir, category, file_type):
+# handles file path creation from user input on main
+def create_file_path(save_dir: str, category: str, file_type: str):
     file_path = save_dir + category + file_type
     return file_path
 
 # convert data dictionary to json string
-# write json string to file at save file path
-def write_data_to_json(data, file):
+# write json string to file
+def write_data_to_json(data: dict, file: str):
     json_string = json.dumps(data)
     file_mode = None
     if exists(file):
@@ -163,7 +165,7 @@ def write_data_to_json(data, file):
         save_file.close()
 
 # handle updating json file
-def update_json_file(data, file):
+def update_json_file(data: dict, file: str):
     file_data = None
     with open(file, 'r') as json_file:
         file_data = json.load(json_file)
@@ -171,8 +173,8 @@ def update_json_file(data, file):
     file_data['products'].extend(data['products'])
     write_data_to_json(file_data, file)
 
-# handles dict row creation, corrects for varying order and number of keys in dict to match csv columns
-def create_dict_row(product, headers):
+# handles row creation, corrects for varying order and number of keys in dict to match csv columns
+def create_row(product: dict, headers: list):
     if product['specs'] is not None:
         specs = product.pop('specs') 
         product.update(specs)
@@ -184,32 +186,32 @@ def create_dict_row(product, headers):
             new_dict[header] = None
     return new_dict
 
-# use global header dictionary and a flattened data dictionary to write csv file
-def write_data_to_csv(data, file):
-    # global header dictionary handles the issue of having an unknown number of various headers on each product within a category  
+# use header dictionary and a flattened data dictionary to write csv file
+def write_data_to_csv(data: list, file: str, header_dict: dict):
+    # header dictionary handles the issue of having an unknown number of various headers on each product within a category  
     headers = header_dict.keys()
 
     with open(file, 'x') as csv_file:
         writer = csv.DictWriter(csv_file, fieldnames=headers)
         writer.writeheader()
         for product in data:
-            new_dict = create_dict_row(product, headers)
+            new_dict = create_row(product, headers)
             writer.writerow(new_dict)
         csv_file.close()
 
 # if headers match csv headers then append to file
-def append_data_to_csv(data, file):
+def append_data_to_csv(data: list, file: str, header_dict: dict):
     headers = header_dict.keys()
 
     with open(file, 'a') as csv_file:
         writer = csv.DictWriter(csv_file, fieldnames=headers)
         for product in data:
-            new_dict = create_dict_row(product, headers)
+            new_dict = create_row(product, headers)
             writer.writerow(new_dict)
         csv_file.close()
 
 # merge csv data with new data, then overwrite file
-def overwrite_csv(data, file):
+def overwrite_csv(data: list, file: str, header_dict: dict):
     headers = header_dict.keys()
 
     with open(file, 'r+') as csv_file:
@@ -218,28 +220,31 @@ def overwrite_csv(data, file):
         writer = csv.DictWriter(csv_file, fieldnames=headers)
         writer.writeheader()
         for product in data:
-            new_dict = create_dict_row(product, headers)
+            new_dict = create_row(product, headers)
             writer.writerow(new_dict)
         csv_file.close()
 
 # method to handle updating product data
-def handle_csv_file_update(data, file):
-    if header_dict == csv_headers_dict:
-        append_data_to_csv(data, file)
+def handle_csv_file_update(data: list, file: str, header_dict: dict, csv_headers: dict):
+    if header_dict == csv_headers:
+        append_data_to_csv(data, file, header_dict)
     else:
-        overwrite_csv(data, file)
+        overwrite_csv(data, file, header_dict)
 
 # main product data collection method
-def scrape_product_data(save_dir, category, file_type, queue=deque()):
+def scrape_product_data(save_dir: str, category: str, file_type: str, queue=deque()):
     data = None
     products_list = []
-    file_path = create_save_file_path(save_dir, category, file_type)
+    file_path = create_file_path(save_dir, category, file_type)
     if file_type == '.csv':
-        set_global_header_dict(file_path)
+        header_dict = create_header_dict(file_path)
+        csv_headers = header_dict
 
     while queue:
         product_url = queue.popleft()
         product = parse_data(product_url, file_type)
+        if file_type == '.csv':
+            header_dict = update_header_dict(product['specs'], header_dict)
         products_list.append(product)
         time.sleep(Random.randint(0, 5))
 
@@ -254,6 +259,6 @@ def scrape_product_data(save_dir, category, file_type, queue=deque()):
         data = products_list # keeps products as a list to iterate for easier csv file conversion
 
         if exists(file_path):
-            handle_csv_file_update(data, file_path)
+            handle_csv_file_update(data, file_path, header_dict, csv_headers)
         else:
-            write_data_to_csv(data, file_path)
+            write_data_to_csv(data, file_path, header_dict)

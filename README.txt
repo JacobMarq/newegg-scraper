@@ -22,6 +22,16 @@ DEPENDENCIES
     selenium==4.3.0
     webdriver_manager==3.7.1
 
+UNIT TESTS
+
+    Run all tests:
+    python3 -m unittest -v
+
+    Run module tests:
+    python3 -m unittest -v test.file_name
+
+    -v: verbose output
+
 MODULES
 
 HOW TOs
