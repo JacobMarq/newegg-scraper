@@ -8,6 +8,7 @@ from os import link
 from os.path import exists, dirname
 from newegg_scraper.constant import SOLD_BY_NE, ORDER_BY, PAGE_SIZE, PAGE_NUM, E_PER_PAGE, CSV_HEADER_1, CSV_HEADER_2, CSV_HEADER_3
 from newegg_scraper.dialogue import input_error_yn, continue_scraping, prompt_complete_captcha
+from newegg_scraper.interface import get_soup, check_for_captcha, handle_captcha
 from collections import deque
 import csv
 
@@ -15,28 +16,6 @@ import csv
 def append_category_url_params(url):
     new_url = url + SOLD_BY_NE + ORDER_BY + PAGE_SIZE + PAGE_NUM
     return new_url
-
-# newegg monitors traffic for bot activity 
-# redirects request to 'are you human' page
-# requires captcha
-def check_for_captcha(soup, url):
-    for h1 in soup.find_all('h1'):
-        if h1 is not None:
-            if h1.text.lower() == 'human?':
-                prompt_complete_captcha()
-                soup = get_soup(url)
-    return soup
-
-# gather beautiful soup of url
-def get_soup(url):
-    options = Options()
-    options.headless = True
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
-    driver.get(url)
-    content = driver.page_source
-    soup = BeautifulSoup(content, features="html.parser")
-    soup = check_for_captcha(soup, url)
-    return soup
 
 # add product urls to queue
 def enqueue_product_urls(soup, queue):
@@ -51,13 +30,17 @@ def enqueue_product_urls(soup, queue):
         queue.append(href)
     return queue
 
+# TODO refactor to iterative function
 # recursively pull product urls from category pages
 def parse_category_pages(url, queue=None, total_pages=None, pg=1):
     # on first loop append params to category url and pull total page number from pagination text
     if total_pages is None:
         queue = deque()
-        url = append_category_url_params(url)
-        soup = get_soup(url + ('% s' % pg))
+        url = append_category_url_params(url) + ('% s' % pg)
+        soup = get_soup(url)
+        if check_for_captcha(soup):
+            handle_captcha(url)
+            soup = get_soup(url)
         span = soup.find('span', attrs={'class':'list-tool-pagination-text'}) # contains: '"Page" <!-- --> <strong> "x" <!-- --> "/" <!-- --> "y" </strong>'
         strong = span.strong.text # contains: 'x/y'
         total_pages = int(strong.split('/')[1])
