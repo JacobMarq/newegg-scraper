@@ -1,4 +1,4 @@
-Web Scraper For Newegg.com
+# Web Scraper For Newegg.com
 ----------------------------
 
 The goal of this application is to parse and collect 
@@ -9,29 +9,31 @@ Data is collected by category en masse. This application
 is not intended for single item lookup but could be
 altered to do so.
 
-DOCS
+## DOCS
 ----------------------------
-TO INSTALL
+### TO INSTALL
 
-DEPENDENCIES
+### DEPENDENCIES
     
-    main/requirements.txt
-    
-    beautifulsoup4==4.11.1
-    pandas==1.4.3
-    selenium==4.3.0
-    webdriver_manager==3.7.1
+>    main/requirements.txt
+>    
+>    beautifulsoup4==4.11.1
+>    pandas==1.4.3
+>    selenium==4.3.0
+>    webdriver_manager==3.7.1
 
-UNIT TESTS
+### UNIT TESTS
 
 Run all unit tests:
-    python3 -m unittest -v
-
+```
+python3 -m unittest -v
+```
 Run unit test for specific module:
-    python3 -m unittest -v test.file_name
+```
+python3 -m unittest -v test.file_name
+```
+<sub>-v: verbose output</sub>
 
--v: verbose output
+### MODULES
 
-MODULES
-
-HOW TOs
+### HOW TOs
