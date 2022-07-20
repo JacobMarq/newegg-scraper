@@ -24,13 +24,13 @@ DEPENDENCIES
 
 UNIT TESTS
 
-    Run all unit tests:
-    ```python3 -m unittest -v
+Run all unit tests:
+    python3 -m unittest -v
 
-    Run unit test for specific module:
-    ```python3 -m unittest -v test.file_name
+Run unit test for specific module:
+    python3 -m unittest -v test.file_name
 
-    -v: verbose output
+-v: verbose output
 
 MODULES
 
