@@ -1,8 +1,8 @@
-from collections import deque
-from datetime import time
-from os.path import dirname, isdir
 from random import Random
-import newegg_scraper
+from datetime import time
+from collections import deque
+from os.path import dirname, isdir
+
 import newegg_scraper.dialogue as dialogue
 import newegg_scraper.constant as constant
 from newegg_scraper.product_urls import get_product_urls

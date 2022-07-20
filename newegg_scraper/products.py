@@ -1,18 +1,12 @@
+import csv
+import json
 from datetime import time
-from distutils.spawn import spawn
 from random import Random
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
-from newegg_scraper.dialogue import prompt_complete_captcha
-from newegg_scraper.interface import get_soup, check_for_captcha, handle_captcha
 from bs4 import BeautifulSoup
 from collections import deque
 from os.path import exists
-import pandas as pd
-import json
-import csv
+
+from newegg_scraper.interface import get_soup, check_for_captcha, handle_captcha
 
 def get_headers_from_csv(file: str):
     header_dict = {}
