@@ -10,30 +10,36 @@ is not intended for single item lookup but could be
 altered to do so.
 
 ## DOCS
-----------------------------
+
 ### TO INSTALL
+----------------------------
 
 ### DEPENDENCIES
+----------------------------
     
->    main/requirements.txt
->    
->    beautifulsoup4==4.11.1
->    pandas==1.4.3
->    selenium==4.3.0
->    webdriver_manager==3.7.1
+    main/requirements.txt
+   
+    beautifulsoup4==4.11.1
+    pandas==1.4.3
+    selenium==4.3.0
+    webdriver_manager==3.7.1
 
 ### UNIT TESTS
+----------------------------
 
 Run all unit tests:
+<sub>-v: verbose output (optional)</sub>
 ```
 python3 -m unittest -v
 ```
 Run unit test for specific module:
+<sub>-v: verbose output (optional)</sub>
 ```
 python3 -m unittest -v test.file_name
 ```
-<sub>-v: verbose output</sub>
 
 ### MODULES
+----------------------------
 
 ### HOW TOs
+----------------------------

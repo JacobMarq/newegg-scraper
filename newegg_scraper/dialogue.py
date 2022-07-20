@@ -1,11 +1,13 @@
 def welcome_message():
+    print('\n')
     print("Welcome to Newegg Scraper!")
-    print("view README.txt for help with commands")
+    print("view README.md for help with commands")
+    print('\n')
     print('++++++ MENU ++++++')
     print('\n')
 
 def select_system_type():
-    print('Select system type:')
+    print('Select system type by number:')
     print('0: All')
     print('1: Desktop')
     print('2: Server')
@@ -34,7 +36,7 @@ def input_success(input):
     print('\n')
 
 def select_component_type():
-    print('Select component type:')
+    print('Select component type by number:')
     print('0: All Components')
     print('1: Core Components')
     print('2: Storage Devices')
@@ -53,7 +55,7 @@ def enter_save_dir_for_product_data():
     print('example -> full/path/to/dir')
 
 def select_file_type():
-    print('Select file type for scraped product data:')
+    print('Select file type for scraped product data by number:')
     print('0: json')
     print('1: csv')
 
