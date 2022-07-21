@@ -12,7 +12,6 @@ def select_system_type():
     print('1: Desktop')
     print('2: Server')
     print('3: Mac')
-    print('4: Laptop')
 
 def type_input_error(input):
     print('\n')
