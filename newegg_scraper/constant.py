@@ -46,19 +46,17 @@ INTERNAL_SSD_SEARCH_URL = 'https://www.newegg.com/p/pl?N=100011693'
 EXTERNAL_SSD_SEARCH_URL = 'https://www.newegg.com/p/pl?N=100011694'
 ENTERPRISE_SSD_SEARCH_URL = 'https://www.newegg.com/p/pl?N=100011695'
 # Server core components
-SERVER_CPU_SEARCH_URL = ''
-SERVER_MEMORY_SEARCH_URL = ''
-SERVER_MOBO_SEARCH_URL = ''
-SERVER_CHASSIS_SEARCH_URL = ''
-SERVER_PSU_SEARCH_URL = ''
-SERVER_BAREBONES_SEARCH_URL = ''
-CONTROLLERS_RAID_CARDS_SEARCH_URL = ''
-SERVER_RACKS_CABINETS_SEARCH_URL = ''
+SERVER_CPU_SEARCH_URL = 'https://www.newegg.com/p/pl?N=100008494'
+SERVER_MEMORY_SEARCH_URL = 'https://www.newegg.com/p/pl?N=100161261'
+SERVER_MOBO_SEARCH_URL = 'https://www.newegg.com/p/pl?N=100161257'
+SERVER_CHASSIS_SEARCH_URL = 'https://www.newegg.com/p/pl?N=100161262'
+SERVER_PSU_SEARCH_URL = 'https://www.newegg.com/p/pl?N=100161263'
+SERVER_BAREBONES_SEARCH_URL = 'https://www.newegg.com/p/pl?N=101696295'
+CONTROLLERS_RAID_CARDS_SEARCH_URL = 'https://www.newegg.com/p/pl?N=100161256'
+SERVER_RACKS_CABINETS_SEARCH_URL = 'https://www.newegg.com/p/pl?N=100161264'
 # Mac components
-MOBILE_CPU_SEARCH_URL = ''
-MAC_MEMORY_SEARCH_URL = ''
-MAC_HDD_SEARCH_URL = ''
-# Laptop components
+MAC_MEMORY_SEARCH_URL = 'https://www.newegg.com/p/pl?N=100007968'
+MAC_HDD_SEARCH_URL = 'https://www.newegg.com/p/pl?N=100007970'
 
 DESKTOP_CORE_COMPONENTS = {
     'memory':MEMORY_SEARCH_URL,
@@ -92,7 +90,6 @@ SERVER_CORE_COMPONENTS = {
     'server_racks_cabinets':SERVER_RACKS_CABINETS_SEARCH_URL,
 }
 MAC_COMPONENTS = {
-    'mobile_cpu':MOBILE_CPU_SEARCH_URL,
     'mac_memory':MAC_MEMORY_SEARCH_URL,
     'mac_hdd':MAC_HDD_SEARCH_URL,
 }

@@ -16,7 +16,7 @@ def input_system_type():
     dialogue.select_system_type()
     sys_type = int(input())
 
-    while sys_type < 0 or sys_type > 4:
+    while sys_type < 0 or sys_type > 3:
         dialogue.type_input_error('sys')
         dialogue.select_system_type()
         sys_type = int(input())
@@ -29,8 +29,6 @@ def input_system_type():
         sys_type = 'Server'
     elif sys_type == 3:
         sys_type = 'Mac'
-    elif sys_type == 4:
-        sys_type = 'Laptop'
 
     dialogue.input_success(sys_type)
     return sys_type
@@ -150,5 +148,3 @@ if __name__ == "__main__":
                 time.sleep(Random.randrange(180, 360, 60))
         else:
             scrape_product_data(save_dir, category, file_type, queue)
-    
-    
