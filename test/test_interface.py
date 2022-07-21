@@ -1,21 +1,12 @@
 import unittest
 from unittest import mock
 from unittest.mock import Mock, patch, mock_open
-from io import StringIO
-import csv
 import warnings
 from os.path import dirname
 
 from bs4 import BeautifulSoup
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
-
-from collections import deque
 from test.helper_methods import get_file_reader
 
-import newegg_scraper
 from newegg_scraper.interface import get_soup, check_for_captcha, handle_captcha
 
 class TestProductMethods(unittest.TestCase):

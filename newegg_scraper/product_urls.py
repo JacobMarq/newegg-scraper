@@ -25,26 +25,28 @@ def enqueue_product_urls(soup: BeautifulSoup, queue: deque):
         queue.append(href)
     return queue
 
-def create_product_queue_from_category(url: str, pg=1, pgs_to_collect=None):
+def create_product_queue_from_category(url: str, pg=1, pgs_to_collect=0):
     queue = deque()
-    total_pages = None
+    total_pages = 0
     url = url + SOLD_BY_NE + ORDER_BY + PAGE_SIZE + PAGE_NUM
 
-    while pg <= total_pages | total_pages is None:
+    while pg <= total_pages or total_pages == 0:
         soup = get_soup(url + ('% s' % pg))
         if check_for_captcha(soup):
             handle_captcha(url)
             soup = get_soup(url)
 
-        if total_pages == None:
+        if total_pages == 0:
             span = soup.find('span', attrs={'class':'list-tool-pagination-text'}) # contains: '"Page" <!-- --> <strong> "x" <!-- --> "/" <!-- --> "y" </strong>'
             strong = span.strong.text # contains: 'x/y'
             total_pages = int(strong.split('/')[1])
+        if pg > total_pages:
+            break
             
-        if pgs_to_collect == None | pgs_to_collect > total_pages:
+        if pgs_to_collect == 0 or pgs_to_collect + (pg - 1) > total_pages:
             pgs_to_collect = total_pages
-        elif total_pages > pgs_to_collect:
-            total_pages = pgs_to_collect
+        elif (pg - 1) + pgs_to_collect < total_pages:
+            total_pages = pgs_to_collect + (pg - 1)
             
         queue = enqueue_product_urls(soup, queue)
         pg += 1
@@ -77,26 +79,6 @@ def append_queue_to_csv(queue: deque, entry_num: int, file: str):
             pg = int(entry_num / E_PER_PAGE) + 1 # provides an estimate of pg number by dividing entry number by the number of entries per page
             writer.writerow([pg, queue.popleft(), entry_num])
 
-# create queue list from url file
-def get_queue_list_from_csv(file: str, pg_num=1):
-    queue_list = []
-    queue = deque()
-
-    with open(file, newline='') as csv_file:
-        reader = csv.DictReader(csv_file)
-        for row in reader:
-            if row:
-                if pg_num < row[CSV_HEADER_1]:
-                    queue_list.append(queue)
-                    queue = deque()
-                    pg_num += 1
-                elif pg_num > row[CSV_HEADER_1]:
-                    continue
-
-                queue.append(row[CSV_HEADER_2])
-    queue_list.append(queue)
-    return queue_list
-
 # get last 20 rows including page number, url, and entry number from csv
 def get_last_rows_from_csv(file: str):
     last_rows = []
@@ -109,6 +91,8 @@ def get_last_rows_from_csv(file: str):
         csv_file.close()
     # last rows set to 20 due to variance in how the page is read and exclusion of combo items
     for i in range(1, 20):
+        if len(data) < i:
+            break
         i = i * -1
         last_rows.append(data[i])  
     return last_rows
@@ -156,6 +140,26 @@ def update_product_urls(file: str, category: str, category_url: str):
         queue = enqueue_new_items(queue, last_rows[0])
         append_queue_to_csv(queue, int(last_rows[0][CSV_HEADER_3]), file)
         return int(last_rows[0][CSV_HEADER_1])
+
+# create queue list from url file
+def get_queue_list_from_csv(file: str, pg_num=1):
+    queue_list = []
+    queue = deque()
+
+    with open(file, newline='') as csv_file:
+        reader = csv.DictReader(csv_file)
+        for row in reader:
+            if row:
+                if pg_num < int(row[CSV_HEADER_1]):
+                    queue_list.append(queue)
+                    queue = deque()
+                    pg_num += 1
+                elif pg_num > int(row[CSV_HEADER_1]):
+                    continue
+
+                queue.append(row[CSV_HEADER_2])
+    queue_list.append(queue)
+    return queue_list
 
 # main product url collection method 
 def get_product_urls(category: str, category_url: str, dont_update = False):

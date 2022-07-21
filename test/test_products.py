@@ -9,7 +9,6 @@ import unittest
 from unittest.mock import Mock, patch, mock_open, call
 
 from newegg_scraper import products
-from newegg_scraper.interface import get_soup, check_for_captcha
 from test.helper_methods import get_file_reader
 
 # Header Dictionary
@@ -42,12 +41,15 @@ class TestProductMethods(unittest.TestCase):
         writer.writerow({'header_1':'test2', 'header_2':'test2'})
         csvfile.seek(0)
 
+        result = None
+
         open_mock = mock_open(read_data=csvfile.read())
         with patch("newegg_scraper.products.open", open_mock, create=True) as m:
-            get_headers_from_csv(m)
+            result = get_headers_from_csv(m)
 
-        self.assertTrue(m.return_value, ({'header_1': None, 'header_2': None}))
+        self.assertEqual(result, ({'header_1': None, 'header_2': None}))
     
+    # ----- create_header_dict() - start
     def test_create_header_dict_with_default_values(self):
         file = '/does/not/exist'
 
@@ -65,6 +67,7 @@ class TestProductMethods(unittest.TestCase):
         
         mock_exists.assert_called_once_with(file)
         mock_get_headers_from_csv.assert_called_once_with(file)
+    # ----- create_header_dict() - end
 
     def test_update_header_dict(self):
         old_keys = {'key_1': None, 'key_2': None}
@@ -107,6 +110,7 @@ class TestProductMethods(unittest.TestCase):
         with self.assertRaises(AttributeError):
             get_spec_table_header(None)
 
+    # ----- get_product_specs() - start
     def test_get_product_specs_from_example(self):
         soup_product_ex = BeautifulSoup(get_file_reader(PRODUCT_HTML), features='html.parser')
         
@@ -120,6 +124,7 @@ class TestProductMethods(unittest.TestCase):
     def test_get_product_specs_from_empty_soup(self):
         empty_soup = BeautifulSoup()
         self.assertIsInstance(get_product_specs(empty_soup), dict)
+    # ----- get_product_specs() - end
 
     @patch.object(products, 'get_soup', return_value = BeautifulSoup())
     def test_parse_data(self,
@@ -152,8 +157,8 @@ class TestProductMethods(unittest.TestCase):
         with self.assertRaises(TypeError):
             create_file_path(2,category,2)
 
-    # ----- JSON
-    # TODO write_data_to_json(data, file)
+    # ----- JSON - start
+    # ----- write_data_to_json() - start
     @patch.object(products, "exists", return_value = True)
     def test_write_data_to_json_that_exists(self, mock_exists: Mock):
         data = {'products':[{'name': 'a'},{'name': 'b'},{'name': 'c'}]}
@@ -177,6 +182,7 @@ class TestProductMethods(unittest.TestCase):
         
         m.assert_has_calls(calls)
         mock_exists.assert_called_once_with(m)
+    # ----- write_data_to_json() - end
 
     @patch.object(products, "write_data_to_json", return_value = None)
     def test_update_json_file(self, mock_write_data_to_json: Mock):
@@ -194,8 +200,9 @@ class TestProductMethods(unittest.TestCase):
             update_json_file(data, m)
 
         mock_write_data_to_json.assert_called_once_with(result_data, m)
+    # ----- JSON - end
 
-    # ----- CSV
+    # ----- CSV - start
     def test_create_row(self):
         header_list = ['key1','key2','key3','key4']
         product = {
@@ -257,6 +264,7 @@ class TestProductMethods(unittest.TestCase):
         m.assert_has_calls(calls)
         mock_create_row.assert_called_once_with(data[0], headers)
     
+    # ----- handle_csv_file_update() - start
     @patch.object(products, "append_data_to_csv", return_value = None)
     def test_handle_csv_file_update_when_headers_are_the_same(self, mock_append_data_to_csv: Mock):
         file = Mock()
@@ -275,6 +283,8 @@ class TestProductMethods(unittest.TestCase):
 
         handle_csv_file_update(data, file, header_dict, diff_dict)
         mock_overwrite_csv.assert_called_once_with(data, file, header_dict)
+    # ----- handle_csv_file_update() - end
+    # ----- CSV - end
 
 if __name__ == '__main__':
     unittest.main()
