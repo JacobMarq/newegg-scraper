@@ -38,6 +38,8 @@ def get_product_price(soup: BeautifulSoup):
     if price is None:
         return None
     price = price.text
+    if "," in price:
+        price = price.replace(",", "")
     if " –" in price:
         price = price[:-2]
     return price

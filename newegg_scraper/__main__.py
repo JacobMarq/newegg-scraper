@@ -34,35 +34,40 @@ def input_system_type():
     return sys_type
 
 # set desired component type(s) data to scrape
-def input_component_type():
-    dialogue.select_component_type()
+def input_component_type(sys_type):
+    dialogue.select_component_type(sys_type)
     component_type = int(input())
+    if sys_type == 'Mac':
+        while component_type < 0 or component_type > 2:
+            dialogue.type_input_error(sys_type)
+            dialogue.select_component_type(sys_type)
+            component_type = int(input())
+    else:
+        while component_type < 0 or component_type > 9:
+            dialogue.type_input_error('component')
+            dialogue.select_component_type(sys_type)
+            component_type = int(input())
 
-    while component_type < 0 or component_type > 9:
-        dialogue.type_input_error('component')
-        dialogue.select_component_type()
-        component_type = int(input())
-
-    if component_type == 0:
-        component_type = 'All Components'
-    elif component_type == 1:
-        component_type = 'Core Components'
-    elif component_type == 2:
-        component_type = 'Storage Devices'
-    elif component_type == 3:
-        component_type = 'CPU'
-    elif component_type == 4:
-        component_type = 'RAM'
-    elif component_type == 5:
-        component_type = 'MOBO'
-    elif component_type == 6:
-        component_type = 'GPU'
-    elif component_type == 7:
-        component_type = 'PSU'
-    elif component_type == 8:
-        component_type = 'CASE'
-    elif component_type == 9:
-        component_type = 'COOLING'
+        if component_type == 0:
+            component_type = 'All Components'
+        elif component_type == 1:
+            component_type = 'Core Components'
+        elif component_type == 2:
+            component_type = 'Storage Devices'
+        elif component_type == 3:
+            component_type = 'CPU'
+        elif component_type == 4:
+            component_type = 'RAM'
+        elif component_type == 5:
+            component_type = 'MOBO'
+        elif component_type == 6:
+            component_type = 'GPU'
+        elif component_type == 7:
+            component_type = 'PSU'
+        elif component_type == 8:
+            component_type = 'CASE'
+        elif component_type == 9:
+            component_type = 'COOLING'
 
     dialogue.input_success(component_type)
     return component_type
@@ -101,42 +106,29 @@ def input_file_type():
     dialogue.input_success(file_type)
     return file_type
 
-# sel used to get dictionary of category names and corresponding urls for category display page.
-def get_categories_to_scrape(sel):
-    categories = None
-    if sel == 'All All Components':
-        categories = {
-            **constant.DESKTOP_CORE_COMPONENTS, 
-            **constant.DESKTOP_STORAGE_DEVICES, 
-            **constant.SERVER_CORE_COMPONENTS, 
-            **constant.MAC_COMPONENTS,
-        }
-    elif sel == 'Desktop All Components':
-        categories = {
-            **constant.DESKTOP_CORE_COMPONENTS,
-            **constant.DESKTOP_STORAGE_DEVICES
-        }
-    elif sel == 'Desktop Core Components':
-        categories = {**constant.DESKTOP_CORE_COMPONENTS}
-    elif sel == 'Desktop Storage Devices':
-        categories = {**constant.DESKTOP_STORAGE_DEVICES}
-    elif sel == 'Server Core Components':
-        categories = {**constant.SERVER_CORE_COMPONENTS}
+def input_pgs_to_collect():
+    dialogue.select_pages_to_collect()
+    pgs_to_collect = int(input())
 
-    return categories
+    while pgs_to_collect < 0 or pgs_to_collect > 99:
+        dialogue.type_input_error('pages')
+        dialogue.select_pages_to_collect()
+        pgs_to_collect = int(input())
+
+    dialogue.input_success(str(pgs_to_collect))
+    return pgs_to_collect
 
 if __name__ == "__main__":
     welcome()
     # defines user selection to be scraped
     sys_type = input_system_type()
-    component_type = input_component_type()
+    component_type = input_component_type(sys_type)
     # defines dir to write scraped data file to and how that data should be stored
     save_dir = input_save_dir()
     file_type = input_file_type()
+    pgs_to_collect = input_pgs_to_collect()
 
-    # sel used to get dictionary of category names and corresponding urls for category display page.
-    sel = sys_type + ' ' + component_type
-    categories = get_categories_to_scrape(sel)
+    categories = constant.get_category_to_scrape(sys_type, component_type)
     for category in categories:
         queue = deque()
         queue_list = get_product_urls(category, categories[category])

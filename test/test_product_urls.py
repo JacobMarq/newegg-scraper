@@ -54,7 +54,7 @@ class TestProductUrlMethods(unittest.TestCase):
     def test_create_product_queue_from_category_page_after_total_pages(self, mock_get_soup: Mock, mock_enqueue_product_urls: Mock):
         url = ''
 
-        q = create_product_queue_from_category(url, 2)
+        q = create_product_queue_from_category(url, 0, 2)
 
         self.assertEqual(q, deque())
         self.assertEqual(mock_get_soup.call_count, 1)
@@ -65,7 +65,7 @@ class TestProductUrlMethods(unittest.TestCase):
     def test_create_product_queue_from_category_first_two_pages(self, mock_get_soup: Mock, mock_enqueue_product_urls: Mock):
         url = ''
 
-        q = create_product_queue_from_category(url, 1, 2)
+        q = create_product_queue_from_category(url, 2, 1)
 
         self.assertEqual(q, deque([1]))
         self.assertEqual(mock_get_soup.call_count, 2)
@@ -76,7 +76,7 @@ class TestProductUrlMethods(unittest.TestCase):
     def test_create_product_queue_from_category_third_page_only(self, mock_get_soup: Mock, mock_enqueue_product_urls: Mock):
         url = ''
         full_url = SOLD_BY_NE + ORDER_BY + PAGE_SIZE + PAGE_NUM
-        q = create_product_queue_from_category(url, 3, 1)
+        q = create_product_queue_from_category(url, 1, 3)
 
         self.assertEqual(q, deque([1]))
         mock_get_soup.assert_called_once_with(full_url + '3')
@@ -89,7 +89,7 @@ class TestProductUrlMethods(unittest.TestCase):
         url = ''
         full_url = SOLD_BY_NE + ORDER_BY + PAGE_SIZE + PAGE_NUM
         calls = [call(full_url + '3'), call(full_url + '4')]
-        q = create_product_queue_from_category(url, 3, 2)
+        q = create_product_queue_from_category(url, 2, 3)
 
         self.assertEqual(q, deque([1]))
         mock_get_soup.assert_has_calls(calls)
@@ -101,7 +101,7 @@ class TestProductUrlMethods(unittest.TestCase):
     @patch.object(product_urls, 'get_soup', return_value = BeautifulSoup("<span class='list-tool-pagination-text'>Page <!-- --> <strong> 1 <!-- --> / <!-- --> 3 </strong></span>", features='html.parser'))
     def test_create_product_queue_from_category_page_three_and_four_with_only_three_pages(self, mock_get_soup: Mock, mock_enqueue_product_urls: Mock):
         url = ''
-        q = create_product_queue_from_category(url, 3, 2)
+        q = create_product_queue_from_category(url, 2, 3)
 
         self.assertEqual(q, deque([1]))
         self.assertEqual(mock_get_soup.call_count, 1)
@@ -201,8 +201,8 @@ class TestProductUrlMethods(unittest.TestCase):
         category = ''
         category_url = ''
 
-        self.assertEqual(update_product_urls(file, category, category_url), 1)
-        mock_create_product_queue_from_category.assert_called_once_with('', 1)
+        self.assertEqual(update_product_urls(file, category, category_url, 0), 1)
+        mock_create_product_queue_from_category.assert_called_once_with('', 0, 1)
         mock_get_last_rows_from_csv.assert_called_once_with('')
         mock_last_rows_contain_last_item.assert_called_once_with([{CSV_HEADER_1: '1', CSV_HEADER_2: 'a', CSV_HEADER_3: '1'}],'1')
         mock_enqueue_new_items.assert_called_once_with(deque(['1','a','1']), {CSV_HEADER_1: '1', CSV_HEADER_2: 'a', CSV_HEADER_3: '1'})

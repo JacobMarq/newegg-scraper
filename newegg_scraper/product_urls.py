@@ -25,7 +25,7 @@ def enqueue_product_urls(soup: BeautifulSoup, queue: deque):
         queue.append(href)
     return queue
 
-def create_product_queue_from_category(url: str, pg=1, pgs_to_collect=0):
+def create_product_queue_from_category(url: str, pgs_to_collect=0, pg=1):
     queue = deque()
     total_pages = 0
     url = url + SOLD_BY_NE + ORDER_BY + PAGE_SIZE + PAGE_NUM
@@ -123,11 +123,11 @@ def prompt_yes_no():
     elif inp == 'no': return False
 
 # handle url file update to check if new urls exist
-def update_product_urls(file: str, category: str, category_url: str):
+def update_product_urls(file: str, category: str, category_url: str, pgs_to_collect: int):
     queue = deque()
     # get the last rows from csv to compare to the current site for changes
     last_rows = get_last_rows_from_csv(file) 
-    queue = create_product_queue_from_category(category_url, int(last_rows[0][CSV_HEADER_1]))
+    queue = create_product_queue_from_category(category_url, pgs_to_collect, int(last_rows[0][CSV_HEADER_1]))
     last_item = queue.pop()
 
     if last_rows_contain_last_item(last_rows, last_item):
@@ -162,18 +162,18 @@ def get_queue_list_from_csv(file: str, pg_num=1):
     return queue_list
 
 # main product url collection method 
-def get_product_urls(category: str, category_url: str, dont_update = False):
+def get_product_urls(category: str, category_url: str, pgs_to_collect: int, dont_update = False):
     url_file = create_url_file_path(category)
 
     if exists(url_file) and dont_update:
         queue_list = get_queue_list_from_csv(url_file) 
         return queue_list
     elif exists(url_file) and not dont_update:
-        pg_num = update_product_urls(url_file, category, category_url)
+        pg_num = update_product_urls(url_file, category, category_url, pgs_to_collect)
         queue_list = get_queue_list_from_csv(url_file, pg_num)
         return queue_list
 
-    queue = create_product_queue_from_category(category_url)
+    queue = create_product_queue_from_category(category_url, pgs_to_collect)
     write_queue_to_csv(queue, url_file)
     queue_list = get_queue_list_from_csv(url_file)
     return queue_list

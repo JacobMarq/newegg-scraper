@@ -62,7 +62,15 @@ python3 -m unittest -v test.test_module_name
 ----------------------------
 
 #### Installation
-TODO
+1. Open directory where you'd like to install newegg_scraper
+2. Clone repository to directory:
+```
+git clone https://github.com/JacobMarq/newegg-scraper.git
+```
+3. Install dependencies using pip
+```
+pip install -r requirements.txt
+```
 
 #### Run from command line
 1. From inside of project repo run:
